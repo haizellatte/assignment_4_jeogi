@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//* 사용자
+model User {
+  id                String        @id
+  email             String        @unique
+  encryptedPassword String
+  profile           UserProfile?
+  createAt          DateTime      @default(now())
+  reservations      Reservation[]
+  reviews           Review[]
+}
+
+model UserProfile {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id])
+  nickname   String
+  phoneNmber String?
+  updatedAt  DateTime @updatedAt
+}
+
+//* 사업자
+model Partner {
+  id                String          @id
+  email             String          @unique
+  encryptedPassword String
+  businessName      String
+  phoneNmber        String
+  staffName         String
+  createAt          DateTime        @default(now())
+  accommodations    Accommodation[]
+}
+
+//* 숙소 정보
+model Accommodation {
+  id          Int               @id @default(autoincrement())
+  partner     Partner           @relation(fields: [partnerId], references: [id])
+  partnerId   String
+  name        String
+  description String            @default("")
+  type        AccommodationType
+  regions     Regions[]
+  rooms       Room[]
+  address1    String
+  address2    String
+  latitude    Float
+  longitude   Float
+  imgUrl      String            @default("")
+  createAt    DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+//* 숙소 Type
+enum AccommodationType {
+  hotel
+  motel
+  resort
+  pension
+  geustHouse
+  poolVilla
+  camping
+  glamping
+}
+
+//* 지역
+model Regions {
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  label          String
+  accommodations Accommodation[]
+  createAt       DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+//* 숙소 정보
+model Room {
+  id              Int           @id @default(autoincrement())
+  name            String
+  description     String        @default("")
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id])
+  accommodationId Int
+  originalPrice   Int
+  price           Int
+  checkInTime     String
+  checkOutTime    String
+  reservations    Reservation[]
+  reviews         Review[]
+  createAt        DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+//* 예약
+model Reservation {
+  id           String    @id
+  room         Room      @relation(fields: [roomId], references: [id])
+  roomId       Int
+  date         DateTime
+  reservedBy   User?     @relation(fields: [reservedById], references: [id])
+  reservedById String?
+  reservedAt   DateTime?
+  CheckedInAt  DateTime?
+  createAt     DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([roomId, date])
+}
+
+//* 리뷰
+model Review {
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  room   Room   @relation(fields: [roomId], references: [id])
+  roomId Int
+
+  rating  Int
+  content String?
+
+  createAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
